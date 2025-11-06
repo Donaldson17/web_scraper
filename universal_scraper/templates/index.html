@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Universal Scraper Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-900 text-gray-100">
+  <div class="container mx-auto py-10 px-6">
+    <h1 class="text-4xl font-bold text-center mb-6 flex justify-center items-center gap-2">
+      🧠 Universal Scraper Dashboard
+    </h1>
+
+    <div class="text-center mb-10">
+      <button id="runAllBtn" class="bg-blue-500 hover:bg-blue-600 px-6 py-2 rounded-lg font-semibold transition">
+        Run All Scrapers
+      </button>
+    </div>
+
+    <!-- DASHBOARD GRID -->
+    <div class="grid md:grid-cols-3 gap-8">
+      <!-- NEWS -->
+      <div class="bg-slate-800 rounded-2xl shadow-lg p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-semibold">📰 Latest News</h2>
+          <button id="loadNews" class="bg-blue-600 px-3 py-1 rounded-md text-sm hover:bg-blue-700">Load</button>
+        </div>
+        <table class="w-full text-sm">
+          <thead class="text-gray-400 border-b border-gray-700">
+            <tr>
+              <th class="py-1 text-left">Title</th>
+              <th class="py-1 text-left">Source</th>
+              <th class="py-1 text-left">Link</th>
+            </tr>
+          </thead>
+          <tbody id="newsTable"></tbody>
+        </table>
+      </div>
+
+      <!-- CRYPTO -->
+      <div class="bg-slate-800 rounded-2xl shadow-lg p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-semibold">💰 Crypto Prices</h2>
+          <button id="loadCrypto" class="bg-green-600 px-3 py-1 rounded-md text-sm hover:bg-green-700">Load</button>
+        </div>
+        <table class="w-full text-sm">
+          <thead class="text-gray-400 border-b border-gray-700">
+            <tr>
+              <th class="py-1 text-left">Name</th>
+              <th class="py-1 text-left">Price (USD)</th>
+              <th class="py-1 text-left">Change</th>
+            </tr>
+          </thead>
+          <tbody id="cryptoTable"></tbody>
+        </table>
+      </div>
+
+      <!-- PRODUCTS -->
+      <div class="bg-slate-800 rounded-2xl shadow-lg p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-semibold">🛍️ Product Data</h2>
+          <button id="loadProducts" class="bg-pink-600 px-3 py-1 rounded-md text-sm hover:bg-pink-700">Load</button>
+        </div>
+        <table class="w-full text-sm">
+          <thead class="text-gray-400 border-b border-gray-700">
+            <tr>
+              <th class="py-1 text-left">Title</th>
+              <th class="py-1 text-left">Price</th>
+              <th class="py-1 text-left">URL</th>
+            </tr>
+          </thead>
+          <tbody id="productTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function fetchAndRender(url, tableId, mapFn) {
+      const res = await fetch(url);
+      const data = await res.json();
+      const table = document.getElementById(tableId);
+      table.innerHTML = data.map(mapFn).join("");
+    }
+
+    document.getElementById("loadNews").onclick = () =>
+      fetchAndRender("/data/news", "newsTable", item => `
+        <tr class="border-b border-gray-700">
+          <td class="py-1">${item.title || '—'}</td>
+          <td class="py-1">${item.source || '—'}</td>
+          <td class="py-1"><a href="${item.link || '#'}" class="text-blue-400 hover:underline" target="_blank">Link</a></td>
+        </tr>`);
+
+    document.getElementById("loadCrypto").onclick = () =>
+      fetchAndRender("/data/crypto", "cryptoTable", item => `
+        <tr class="border-b border-gray-700">
+          <td class="py-1">${item.name || '—'}</td>
+          <td class="py-1">$${item.price || '—'}</td>
+          <td class="py-1 text-${item.change_24h >= 0 ? 'green' : 'red'}-400">${item.change_24h || '—'}%</td>
+        </tr>`);
+
+    document.getElementById("loadProducts").onclick = () =>
+      fetchAndRender("/data/products", "productTable", item => `
+        <tr class="border-b border-gray-700">
+          <td class="py-1">${item.title || '—'}</td>
+          <td class="py-1">$${item.price || '—'}</td>
+          <td class="py-1"><a href="${item.url || '#'}" class="text-blue-400 hover:underline" target="_blank">Link</a></td>
+        </tr>`);
+
+    document.getElementById("runAllBtn").onclick = async () => {
+      await fetch("/scrape/all");
+      alert("All scrapers ran successfully!");
+    };
+  </script>
+</body>
+</html>
