@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Universal Scraper Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body class="bg-slate-900 text-gray-100">
+  <nav class="bg-slate-800 border-b border-slate-700 px-6 py-4">
+    <div class="flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <i class="fas fa-spider text-blue-400 text-2xl"></i>
+        <h1 class="text-xl font-bold">Universal Scraper Pro</h1>
+      </div>
+      <div class="flex items-center gap-2 text-sm">
+        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+        <span id="status">Ready</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mx-auto py-6 px-6">
+    <div class="grid grid-cols-3 gap-4 mb-8">
+      <div class="bg-slate-800 rounded-lg p-4 text-center">
+        <div class="text-2xl font-bold text-blue-400" id="newsCount">0</div>
+        <div class="text-sm text-gray-400">News Articles</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-4 text-center">
+        <div class="text-2xl font-bold text-green-400" id="cryptoCount">0</div>
+        <div class="text-sm text-gray-400">Crypto Coins</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-4 text-center">
+        <div class="text-2xl font-bold text-pink-400" id="productCount">0</div>
+        <div class="text-sm text-gray-400">Products</div>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-6">
+      <div class="bg-slate-800 rounded-xl p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold flex items-center gap-2">
+            <i class="fas fa-newspaper text-blue-400"></i>Latest News
+          </h2>
+          <button id="loadNews" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm">
+            <i class="fas fa-sync text-xs"></i> Refresh
+          </button>
+        </div>
+        <div class="overflow-hidden rounded-lg border border-slate-700">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-700">
+              <tr>
+                <th class="py-2 px-3 text-left">Title</th>
+                <th class="py-2 px-3 text-left">Source</th>
+              </tr>
+            </thead>
+            <tbody id="newsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-slate-800 rounded-xl p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold flex items-center gap-2">
+            <i class="fab fa-bitcoin text-yellow-400"></i>Crypto Prices
+          </h2>
+          <button id="loadCrypto" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm">
+            <i class="fas fa-sync text-xs"></i> Refresh
+          </button>
+        </div>
+        <div class="overflow-hidden rounded-lg border border-slate-700">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-700">
+              <tr>
+                <th class="py-2 px-3 text-left">Name</th>
+                <th class="py-2 px-3 text-left">Price</th>
+              </tr>
+            </thead>
+            <tbody id="cryptoTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-slate-800 rounded-xl p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold flex items-center gap-2">
+            <i class="fas fa-shopping-cart text-pink-400"></i>Products
+          </h2>
+          <button id="loadProducts" class="bg-pink-600 hover:bg-pink-700 px-3 py-1 rounded text-sm">
+            <i class="fas fa-sync text-xs"></i> Refresh
+          </button>
+        </div>
+        <div class="overflow-hidden rounded-lg border border-slate-700">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-700">
+              <tr>
+                <th class="py-2 px-3 text-left">Title</th>
+                <th class="py-2 px-3 text-left">Price</th>
+              </tr>
+            </thead>
+            <tbody id="productTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allData = { news: [], crypto: [], products: [] };
+
+    function updateStats() {
+      document.getElementById('newsCount').textContent = allData.news.length;
+      document.getElementById('cryptoCount').textContent = allData.crypto.length;
+      document.getElementById('productCount').textContent = allData.products.length;
+    }
+
+    async function fetchAndRender(url, tableId, mapFn, dataType) {
+      const table = document.getElementById(tableId);
+      const status = document.getElementById('status');
+      
+      table.innerHTML = '<tr><td colspan="2" class="text-center py-4 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>Loading...</td></tr>';
+      status.textContent = `Loading ${dataType}...`;
+      
+      try {
+        const res = await fetch(url);
+        const response = await res.json();
+        
+        if (response.status === 'error') {
+          table.innerHTML = `<tr><td colspan="2" class="text-center py-4 text-red-400">Error: ${response.message}</td></tr>`;
+          status.textContent = 'Error';
+          return;
+        }
+        
+        const data = response.data || [];
+        allData[dataType] = data;
+        
+        if (data.length === 0) {
+          table.innerHTML = '<tr><td colspan="2" class="text-center py-4 text-gray-500">No data available</td></tr>';
+        } else {
+          table.innerHTML = data.map(mapFn).join("");
+        }
+        
+        updateStats();
+        status.textContent = 'Ready';
+      } catch (error) {
+        table.innerHTML = '<tr><td colspan="2" class="text-center py-4 text-red-400">Network error</td></tr>';
+        status.textContent = 'Network Error';
+      }
+    }
+
+    document.getElementById("loadNews").onclick = () =>
+      fetchAndRender("/api/news", "newsTable", item => `
+        <tr class="hover:bg-slate-700">
+          <td class="py-3 px-3">
+            <div class="font-medium text-gray-200">${(item.title || '—').substring(0, 50)}...</div>
+          </td>
+          <td class="py-3 px-3">
+            <span class="bg-blue-600 text-xs px-2 py-1 rounded">${item.source || '—'}</span>
+          </td>
+        </tr>`, 'news');
+
+    document.getElementById("loadCrypto").onclick = () =>
+      fetchAndRender("/api/crypto", "cryptoTable", item => `
+        <tr class="hover:bg-slate-700">
+          <td class="py-3 px-3">
+            <div class="font-semibold text-gray-200">${item.name || '—'}</div>
+            <div class="text-xs text-gray-400">${item.symbol || ''}</div>
+          </td>
+          <td class="py-3 px-3 font-mono text-green-400">$${parseFloat(item.price || 0).toLocaleString()}</td>
+        </tr>`, 'crypto');
+
+    document.getElementById("loadProducts").onclick = () =>
+      fetchAndRender("/api/products", "productTable", item => `
+        <tr class="hover:bg-slate-700">
+          <td class="py-3 px-3">
+            <div class="font-medium text-gray-200">${(item.title || '—').substring(0, 35)}...</div>
+          </td>
+          <td class="py-3 px-3 font-semibold text-green-400">$${parseFloat(item.price || 0).toFixed(2)}</td>
+        </tr>`, 'products');
+
+    // Auto-load data on page load
+    window.onload = () => {
+      document.getElementById("loadNews").click();
+      document.getElementById("loadCrypto").click();
+      document.getElementById("loadProducts").click();
+    };
+  </script>
+</body>
+</html>
