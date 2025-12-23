@@ -4,6 +4,10 @@ from scraper import scrape_news, scrape_crypto, scrape_products
 
 app = Flask(__name__)
 
+# Vercel serverless function handler
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app)
+
 @app.route("/")
 def home():
     return render_template("index.html")
